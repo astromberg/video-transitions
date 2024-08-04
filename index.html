@@ -1,0 +1,193 @@
+<html>
+
+<head>
+    <style>
+        .hidden {
+            display: none;
+        }
+
+        .container {
+            height: 400px;
+            width: 711px;
+            position: relative;
+        }
+
+        video,
+        canvas {
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        @keyframes wipe-out-bottom-right {
+            from {
+                clip-path: polygon(50% -50%, 150% 50%, 50% 150%, -50% 50%);
+            }
+
+            to {
+                clip-path: polygon(150% 50%, 150% 50%, 50% 150%, 50% 150%);
+            }
+        }
+
+        @keyframes fade-out {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        [transition-style="in:circle:center"] {
+            animation: 2.5s linear circle-in-center both;
+        }
+
+        .wipe {
+            animation: 2s linear wipe-out-bottom-right both;
+        }
+
+        .fade-out {
+            animation: 2s linear fade-out both;
+        }
+
+        @keyframes fade-in {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .fade-in {
+            animation: 2s linear fade-in both;
+        }
+
+        @keyframes circle-wee {
+            from {
+                clip-path: circle(50px at 0 100px);
+            }
+
+            to {
+                clip-path: polygon(150% 50%, 150% 50%, 50% 150%, 50% 150%);
+            }
+        }
+
+        .circle-wee {
+            animation: 2s linear fade-in both;
+        }
+    </style>
+    <script>
+        let visible, invisible;
+        let toggled = false;
+        let toggling = false;
+        let speed;
+        let speedValue = 2000;
+        window.addEventListener('load', () => {
+            visible = document.getElementById('a');
+            invisible = document.getElementById('b');
+            intermediate = document.getElementById('canvas');
+            speed = document.getElementById('speed');
+            incrementSpeed(0);
+        });
+
+        // Video to video effect.
+        function toggle(type) {
+            if (toggling) return;
+            toggling = true;
+            visible.classList.toggle('hidden');
+            visible.pause();
+            intermediate.classList.toggle('hidden');
+            writeVideoImage(visible);
+            invisible.classList.toggle('hidden');
+            invisible.play();
+            intermediate.style.animationDuration = speedValue + 'ms';
+            intermediate.classList.toggle(type);
+            setTimeout(() => {
+                intermediate.classList.toggle(type);
+                intermediate.classList.toggle('hidden');
+                invisible.play();
+                [visible, invisible] = [invisible, visible];
+                toggling = false;
+            }, speedValue);
+        }
+
+        function updateCanvasCommon(video) {
+            var w = video.videoWidth;
+            var h = video.videoHeight;
+            intermediate.width = w;
+            intermediate.height = h;
+            var ctx = intermediate.getContext('2d');
+            return { w, h, ctx };
+        }
+
+        function writeVideoImage(video) {
+            const { w, h, ctx } = updateCanvasCommon(video);
+            ctx.drawImage(video, 0, 0, w, h);
+        }
+
+        function writeColor(video) {
+            const { w, h, ctx } = updateCanvasCommon(video);
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, w, h);
+        }
+
+        function fadeToBlack(type) {
+            if (toggling) return;
+            toggling = true;
+            visible.pause();
+            writeColor(visible);
+            intermediate.classList.toggle('hidden');
+            intermediate.style.animationDuration = speedValue / 2 + 'ms';
+            intermediate.classList.add('fade-in');
+            setTimeout(() => {
+                visible.classList.toggle('hidden');
+                visible.pause();
+                invisible.classList.toggle('hidden');
+                intermediate.classList.remove('fade-in')
+                intermediate.style.animationDuration = speedValue / 2 + 'ms';
+                intermediate.classList.toggle('fade-out')
+                // intermediate.classList.toggle('fade-in')
+                setTimeout(() => {
+                    [visible, invisible] = [invisible, visible];
+                    invisible.play()
+                    intermediate.classList.toggle('fade-out');
+                    intermediate.classList.toggle('hidden');
+                    toggling = false;
+                }, speedValue / 2)
+            }, speedValue / 2);
+        }
+
+        function incrementSpeed(amount) {
+            speedValue = speedValue + amount;
+            speed.innerText = speedValue;
+        }
+    </script>
+</head>
+<div style="padding-bottom: 10px;">
+    <button onclick="toggle('wipe')">wipe</button>
+    <button onclick="toggle('fade-out')">fade</button>
+    <button onclick="fadeToBlack()">fade to black</button>
+    <button onclick="incrementSpeed(-200)">-</button>
+    <span id="speed"></span>ms
+    <button onclick="incrementSpeed(100)">+</button>
+    <button onclick="visible.play()">></button>
+</div>
+<div class="container">
+    <video id="a">
+        <source src="a.mp4" type="video/mp4" muted />
+    </video>
+    <video id="b" class="hidden">
+        <source src="b.mp4" type="video/mp4" />
+    </video>
+    <canvas id="canvas" class="hidden"></canvas>
+</div>
+
+<div style="padding-top: 20px;">
+    Videos are pexels 3195394 and 4114797.
+</div>
+</html>
